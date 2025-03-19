@@ -1,6 +1,7 @@
 ﻿#pragma warning disable 
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
@@ -11,13 +12,8 @@ public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
     private DateTime LastFed { get; set; }
     public bool IsAlive { get; private set; }
 
-    // Events
-    public event Action OnAnimalHungry;
-    public event Action OnAnimalOverfed;
-    public event Action OnAnimalStarved;
-
-    // Internal state for tracking the time without feeding
-    private DateTime _lastCheckTime;
+    // Івент для спостереження за змінами стану тварини
+    public event Action<string> StatusChanged;
 
     public Animal(string name)
     {
@@ -26,18 +22,24 @@ public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
         IsHappy = false;
         LastFed = DateTime.Now;
         IsAlive = true;
-        _lastCheckTime = DateTime.Now;
 
         MonitorHealth();
     }
 
+    // Повідомлення для спостерігачів через івент
+    protected void NotifyStatusChanged(string message)
+    {
+        StatusChanged?.Invoke(message);
+    }
+
     public abstract void PerformAction();
 
+    // Моніторинг здоров'я тварини
     public async void MonitorHealth()
     {
         while (IsAlive)
         {
-            await Task.Delay(5000); // Check health every 5 seconds
+            await Task.Delay(5000);
             CheckForDeath();
         }
     }
@@ -46,19 +48,18 @@ public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
     {
         if (!IsAlive)
         {
-            Console.WriteLine($"{Name} is dead and cannot be fed.");
+            Console.WriteLine($"{Name} is dead.");
             return;
         }
 
         FeedCount++;
         LastFed = DateTime.Now;
-        _lastCheckTime = DateTime.Now; // Reset the starvation check time
 
         if (FeedCount > 5)
         {
-            Console.WriteLine($"{Name} has eaten too much and has died from overeating.");
+            Console.WriteLine($"{Name} overate and died.");
             IsAlive = false;
-            OnAnimalOverfed?.Invoke();
+            NotifyStatusChanged($"{Name} has died from overeating!");
         }
         else
         {
@@ -71,35 +72,23 @@ public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
         if (IsAlive)
         {
             IsHappy = true;
-            Console.WriteLine($"{Name} is happy because it's clean!");
-        }
-        else
-        {
-            Console.WriteLine($"{Name} is dead and cannot be cleaned.");
+            Console.WriteLine($"{Name} is now clean and happy!");
         }
     }
 
     public void ShowStatus()
     {
-        Console.WriteLine(IsAlive ? $"{Name} is alive. Fed {FeedCount} times today. Happy: {IsHappy}" : $"{Name} is dead.");
+        Console.WriteLine(IsAlive ? $"{Name} is alive. Fed {FeedCount} times. Happy: {IsHappy}" : $"{Name} is dead.");
     }
 
     public void CheckForDeath()
     {
-        if (!IsAlive)
-        {
-            return; // If the animal is dead, stop checking for starvation
-        }
+        if (!IsAlive) return;
 
-        // Simulate 24 hours as 15 seconds
-        int simulatedTimeInSeconds = 15;
-
-        // If 20 seconds have passed without feeding, the animal dies
-        if ((DateTime.Now - _lastCheckTime).TotalSeconds >= simulatedTimeInSeconds)
+        if ((DateTime.Now - LastFed).TotalSeconds >= 15)
         {
             IsAlive = false;
-            OnAnimalStarved?.Invoke();
-            Console.WriteLine($"{Name} has died from starvation after {simulatedTimeInSeconds} seconds (simulating 24 hours without food).");
+            NotifyStatusChanged($"{Name} has died from starvation!");
         }
     }
 }

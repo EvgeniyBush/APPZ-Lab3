@@ -2,13 +2,10 @@
 
 public class Cat : Animal
 {
-    public Cat(string name) : base(name)
-    {
-        OnAnimalHungry += () => Console.WriteLine($"{Name} is hungry and meowing.");
-    }
+    public Cat(string name) : base(name) { }
 
     public override void PerformAction()
     {
-        Console.WriteLine(IsAlive ? $"{Name} is walking around." : $"{Name} cannot perform any actions as it is dead.");
+        Console.WriteLine(IsAlive ? $"{Name} is playing." : $"{Name} cannot move.");
     }
 }

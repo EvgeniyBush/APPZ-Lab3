@@ -1,7 +1,6 @@
-﻿#pragma warning disable 
+﻿#pragma warning disable
 
 public interface IStatus
 {
     void ShowStatus();
 }
-
