@@ -25,9 +25,6 @@ public class Owner
         string petName = Console.ReadLine();
         Animal = factory.CreateAnimal(petName);
 
-        // Підписка на івенти статусу тварини
-        Animal.StatusChanged += status => Console.WriteLine($"[Notification]: {status}");
-
         Console.WriteLine($"You now have a new pet: {Animal.Name}");
     }
 
@@ -36,7 +33,6 @@ public class Owner
         if (Animal != null)
         {
             Console.WriteLine($"{Animal.Name} has been released.");
-            Animal.StatusChanged -= status => Console.WriteLine($"[Notification]: {status}");
             Animal = null;
         }
         else

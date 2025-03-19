@@ -10,6 +10,8 @@ public class Program
         string ownerName = Console.ReadLine();
         Owner owner = new Owner(ownerName);
 
+        AnimalObserver observer = new AnimalObserver();
+
         bool exit = false;
         while (!exit)
         {
@@ -23,12 +25,13 @@ public class Program
                     AnimalFactory factory = Console.ReadLine() == "1" ? new CatFactory() :
                                            Console.ReadLine() == "2" ? new ParrotFactory() : new SnakeFactory();
                     owner.GetNewAnimal(factory);
+                    observer.Subscribe(owner.Animal);
                     break;
                 case 2: owner.Animal?.Feed(); break;
                 case 3: owner.Animal?.Clean(); break;
                 case 4: owner.Animal?.PerformAction(); break;
                 case 5: owner.Animal?.ShowStatus(); break;
-                case 6: owner.ReleaseAnimal(); break;
+                case 6: owner.ReleaseAnimal(); observer.Unsubscribe(); break;
                 case 7: exit = true; break;
             }
         }

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
+public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus, IObservable<string>
 {
     public string Name { get; }
     private int FeedCount { get; set; }
@@ -12,8 +12,7 @@ public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
     private DateTime LastFed { get; set; }
     public bool IsAlive { get; private set; }
 
-    // Івент для спостереження за змінами стану тварини
-    public event Action<string> StatusChanged;
+    private List<IObserver<string>> observers = new();
 
     public Animal(string name)
     {
@@ -26,15 +25,41 @@ public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
         MonitorHealth();
     }
 
-    // Повідомлення для спостерігачів через івент
-    protected void NotifyStatusChanged(string message)
+    public IDisposable Subscribe(IObserver<string> observer)
     {
-        StatusChanged?.Invoke(message);
+        if (!observers.Contains(observer))
+            observers.Add(observer);
+        return new Unsubscriber(observers, observer);
+    }
+
+    private class Unsubscriber : IDisposable
+    {
+        private List<IObserver<string>> _observers;
+        private IObserver<string> _observer;
+
+        public Unsubscriber(List<IObserver<string>> observers, IObserver<string> observer)
+        {
+            _observers = observers;
+            _observer = observer;
+        }
+
+        public void Dispose()
+        {
+            if (_observer != null && _observers.Contains(_observer))
+                _observers.Remove(_observer);
+        }
+    }
+
+    public void Notify(string message)
+    {
+        foreach (var observer in observers)
+        {
+            observer.OnNext(message);
+        }
     }
 
     public abstract void PerformAction();
 
-    // Моніторинг здоров'я тварини
     public async void MonitorHealth()
     {
         while (IsAlive)
@@ -59,7 +84,7 @@ public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
         {
             Console.WriteLine($"{Name} overate and died.");
             IsAlive = false;
-            NotifyStatusChanged($"{Name} has died from overeating!");
+            Notify($"{Name} has died from overeating!");
         }
         else
         {
@@ -88,7 +113,7 @@ public abstract class Animal : IFeedable, ICleanable, IAnimalActions, IStatus
         if ((DateTime.Now - LastFed).TotalSeconds >= 15)
         {
             IsAlive = false;
-            NotifyStatusChanged($"{Name} has died from starvation!");
+            Notify($"{Name} has died from starvation!");
         }
     }
 }
